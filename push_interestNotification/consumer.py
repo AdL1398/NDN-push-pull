@@ -16,18 +16,13 @@ python_version  : Python 2.7.12
 """
 
 import sys
-import argparse
-import traceback
 import time
-import os
-import subprocess
+import traceback
 
-from pyndn import Name
 from pyndn import Data
 from pyndn import Face
-from pyndn import InterestFilter
+from pyndn import Name
 from pyndn.security import KeyChain
-from pyndn import Interest
 
 
 class Consumer(object):

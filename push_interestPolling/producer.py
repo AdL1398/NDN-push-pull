@@ -1,85 +1,87 @@
+"""
+title           : producer.py
+description     : Example of pull based communicaiton model
+
+
+source          :
+author          : Adisorn Lertsinsrubtavee
+date            : 25 June 2017
+version         : 1.0
+contributors    :
+usage           :
+notes           :
+compile and run : It is a python module imported by a main python programme.
+python_version  : Python 2.7.12
+====================================================
+"""
+
 import sys
 import time
 import argparse
 import traceback
-import random
 
-from pyndn import Name
+from pyndn import Interest
 from pyndn import Data
+from pyndn import Exclude
+from pyndn import Name
 from pyndn import Face
+from pyndn import InterestFilter
 from pyndn.security import KeyChain
-
-
-
+import threading
 
 class Producer(object):
+    def __init__(self):
 
-    def __init__(self, delay=None):
+        Prefix1 = '/umobile/push_polling/'
+        self.configPrefix = Name(Prefix1)
+        self.outstanding = dict()
+        self.isDone = False
         self.keyChain = KeyChain()
-        self.delay = delay
-        self.nDataServed = 0
 
+        self.face = Face("127.0.0.1")
 
-    def run(self, namespace):
+    def run(self):
+        try:
 
-        # The default Face will connect using a Unix socket
-        face = Face()
-        prefix = Name(namespace)
+            self.face.setCommandSigningInfo(self.keyChain, \
+                                            self.keyChain.getDefaultCertificateName())
+            self.face.registerPrefix(self.configPrefix, self.onInterest, self.onRegisterFailed)
+            print "Registering listening prefix : " + self.configPrefix.toUri()
 
-        # Use the system default key chain and certificate name to sign commands.
-        face.setCommandSigningInfo(self.keyChain, self.keyChain.getDefaultCertificateName())
+            while not self.isDone:
+                self.face.processEvents()
+                time.sleep(0.01)
 
-        # Also use the default certificate name to sign data packets.
-        face.registerPrefix(prefix, self.onInterest, self.onRegisterFailed)
+        except RuntimeError as e:
+            print "ERROR: %s" % e
 
-        print "Registering prefix", prefix.toUri()
-
-        while True:
-            face.processEvents()
-            time.sleep(0.01)
-
-
-
-    def onInterest(self, prefix, interest, transport, registeredPrefixId):
-
-        if self.delay is not None:
-            time.sleep(self.delay)
+    def onInterest(self, prefix, interest, face, interestFilterId, filter):
 
         interestName = interest.getName()
-
         data = Data(interestName)
-        data.setContent("Hello " + interestName.toUri())
-        data.getMetaInfo().setFreshnessPeriod(3600 * 1000)
-
+        data.setContent("Test Push Interest Polling model")
+        hourMilliseconds = 600 * 1000
+        data.getMetaInfo().setFreshnessPeriod(hourMilliseconds)
         self.keyChain.sign(data, self.keyChain.getDefaultCertificateName())
-
-        transport.send(data.wireEncode().toBuffer())
-
-        self.nDataServed += 1
-        print "Replied to: %s (#%d)" % (interestName.toUri(), self.nDataServed)
+        face.send(data.wireEncode().toBuffer())
+        print "Replied to Interest name: %s" % interestName.toUri()
+        print "Replied with Data name: %s" % interestName.toUri()
 
 
     def onRegisterFailed(self, prefix):
         print "Register failed for prefix", prefix.toUri()
-
-
-
-
+        self.isDone = True
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Parse command line args for ndn producer')
-    parser.add_argument("-n", "--namespace", required=True, help='namespace to listen under')
-    parser.add_argument("-d", "--delay", required=False, help='namespace to listen under', nargs= '?', const=1, type=float, default=None)
-
-    args = parser.parse_args()
 
     try:
-        namespace = args.namespace
-        delay = args.delay
 
-        Producer(delay).run(namespace)
+        Producer().run()
 
     except:
         traceback.print_exc(file=sys.stdout)
         sys.exit(1)
+
+
+

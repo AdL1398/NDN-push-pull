@@ -1,18 +1,20 @@
-# Copyright (c) 2015-2016 Internet Education and Research Laboratory (intERLab), Asian Institute of Technology, Thailand
-# @author Upeka De Silva <st116384@ait.asia>
+"""
+title           : enumerate_publisher.py
+description     : This class is used to split large files into smaller segments
+				  inputs : file name, maximum segment size, segment number
+				  outputs : requested segment of the file, last segment number
 
-# enumerate_publisher.py
-# This class is used to split large files into smaller segments
-# inputs : file name, maximum segment size, segment number
-# outputs : requested segment of the file, last segment number
-
-
-import sys
-import time
-import argparse
-import traceback
-import math
-
+source          :
+author          : Adisorn Lertsinsrubtavee
+date            : 25 June 2017
+version         : 1.0
+contributors    :
+usage           :
+notes           :
+compile and run : It is a python module imported by a main python programme.
+python_version  : Python 2.7.12
+====================================================
+"""
 
 
 class EnumeratePublisher(object):

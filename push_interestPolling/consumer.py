@@ -1,58 +1,82 @@
+"""
+title           : consumer.py
+description     : Example of pull based communicaiton model
+
+
+source          :
+author          : Adisorn Lertsinsrubtavee
+date            : 25 June 2017
+version         : 1.0
+contributors    :
+usage           :
+notes           :
+compile and run : It is a python module imported by a main python programme.
+python_version  : Python 2.7.12
+====================================================
+"""
+
 import sys
-import time
 import argparse
 import traceback
+import time
+import os
+import subprocess
+
+from pyndn import Name
+from pyndn import Data
+from pyndn import Face
+from pyndn import InterestFilter
+from pyndn.security import KeyChain
+from multiprocessing import Process
+import time
+
 
 from pyndn import Interest
-from pyndn import Name
-from pyndn import Face
+from threading import Timer, Thread, Event
 
 
 class Consumer(object):
-    '''Sends Interest, listens for data'''
+    def __init__(self):
 
-    def __init__(self, pipeline, count):
-        self.prefix = '/umobile/polling'
-        self.pipeline = pipeline
-        self.count = count
-        self.nextSegment = 0
         self.outstanding = dict()
         self.isDone = False
-
+        self.keyChain = KeyChain()
         self.face = Face("127.0.0.1")
+        self.namePrefix = '/umobile/push_polling/'
+        self.polling_interval = 5
+        self.nextSegment = 0
 
     def run(self):
-        try:
-            while self.nextSegment < self.pipeline:
-                self._sendNextInterest(self.prefix)
-                self.nextSegment += 1
 
-            while not self.isDone:
-                self.face.processEvents()
-                time.sleep(0.01)
+        try:
+
+             ## Send Polling Interest message every 5 s
+             p1 = Process(target=self.send_PollingInterest, args=(self.polling_interval,))
+             p1.start()
+
+             while not self.isDone:
+                 self.face.processEvents()
+                 time.sleep(0.01)
+
 
         except RuntimeError as e:
             print "ERROR: %s" % e
 
 
+    def run_eventloop(self, name):
+        while not self.isDone:
+            self.face.processEvents()
+            time.sleep(0.01)
 
-    def _onData(self, interest, data):
-        payload = data.getContent()
-        name = data.getName()
 
-        print "Received data: %s\n" % payload.toRawStr()
-        del self.outstanding[name.toUri()]
-
-        if self.count == self.nextSegment or data.getMetaInfo().getFinalBlockID() == data.getName()[-1]:
-            self.isDone = True
-        else:
-            self._sendNextInterest(self.prefix)
+    def send_PollingInterest(self, interval):
+        while not self.isDone:
+            self._sendNextInterest(Name(self.namePrefix))
             self.nextSegment += 1
-
+            time.sleep(interval)
 
     def _sendNextInterest(self, name):
         self._sendNextInterestWithSegment(Name(name).appendSegment(self.nextSegment))
-
 
     def _sendNextInterestWithSegment(self, name):
         interest = Interest(name)
@@ -64,43 +88,40 @@ class Consumer(object):
         if name.toUri() not in self.outstanding:
             self.outstanding[name.toUri()] = 1
 
-        self.face.expressInterest(interest, self._onData, None)
+        self.face.expressInterest(interest, self._onData, self._onTimeout)
         print "Sent Interest for %s" % uri
 
+    def _onData(self, interest, data):
+        payload = data.getContent()
+        dataName = data.getName()
+        dataName_size = dataName.size()
+
+        print "Received data name: ", dataName.toUri()
+        print "Received data: ", payload.toRawStr()
+        self.isDone = True
 
     def _onTimeout(self, interest):
         name = interest.getName()
         uri = name.toUri()
 
-        print "TIMEOUT #%d: segment #%s" % (self.outstanding[uri], name[-1].toNumber())
+        print "TIMEOUT #%d: %s" % (self.outstanding[uri], uri)
         self.outstanding[uri] += 1
 
         if self.outstanding[uri] <= 3:
-            self._sendNextInterestWithSegment(name)
+            self._sendNextInterest(name)
         else:
             self.isDone = True
 
+    def onRegisterFailed(self, prefix):
+        print "Register failed for prefix", prefix.toUri()
+        self.isDone = True
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Parse command line args for ndn consumer')
-
-    parser.add_argument("-p", "--pipe",required=False, help='number of Interests to pipeline, default = 1', nargs= '?', const=1, type=int, default=1)
-    parser.add_argument("-c", "--count", required=False, help='number of (unique) Interests to send before exiting, default = repeat until final block', nargs='?', const=1,  type=int, default=None)
-
-    arguments = parser.parse_args()
+if __name__ == '__main__':
 
     try:
-        pipeline = arguments.pipe
-        count = arguments.count
 
-        if count is not None and count < pipeline:
-            print "Number of Interests to send must be >= pipeline size"
-            sys.exit(1)
-
-        Consumer(pipeline, count).run()
+        Consumer().run()
 
     except:
         traceback.print_exc(file=sys.stdout)
-        print "Error parsing command line arguments"
         sys.exit(1)

@@ -32,7 +32,7 @@ from pyndn.security import KeyChain
 class Producer(object):
     def __init__(self):
 
-        Prefix1 = '/umobile/test'
+        Prefix1 = '/umobile/pull'
         self.configPrefix = Name(Prefix1)
         self.outstanding = dict()
         self.isDone = False

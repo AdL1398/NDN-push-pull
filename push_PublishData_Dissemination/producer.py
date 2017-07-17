@@ -18,15 +18,12 @@ python_version  : Python 2.7.12
 
 import sys
 import time
-import argparse
 import traceback
 import os
 from pyndn import Interest
 from pyndn import Data
-from pyndn import Exclude
 from pyndn import Name
 from pyndn import Face
-from pyndn import InterestFilter
 from pyndn.security import KeyChain
 from enumerate_publisher import EnumeratePublisher
 

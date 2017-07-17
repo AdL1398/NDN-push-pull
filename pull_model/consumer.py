@@ -37,7 +37,7 @@ class Consumer(object):
         self.isDone = False
         self.keyChain = KeyChain()
         self.face = Face("127.0.0.1")
-        self.nameInput = '/umobile/test'
+        self.nameInput = '/umobile/pull'
 
     def run(self):
 

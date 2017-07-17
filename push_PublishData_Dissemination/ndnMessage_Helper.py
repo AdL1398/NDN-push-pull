@@ -1,10 +1,20 @@
-from pyndn import Interest
-from pyndn import Data
-from pyndn import Exclude
-from pyndn import Name
-from pyndn import Face
-from pyndn import InterestFilter
-from pyndn.security import KeyChain
+"""
+title           : ndnMessageHelper.py
+description     : This module is used to extract the Data message and send the next Interest
+
+source          :
+author          : Adisorn Lertsinsrubtavee
+date            : 25 June 2017
+version         : 1.0
+contributors    :
+usage           :
+notes           :
+compile and run : It is a python module imported by a main python programme.
+python_version  : Python 2.7.12
+====================================================
+"""
+
+
 import os
 
 def extractData_message(path, fileName, data):
