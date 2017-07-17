@@ -21,6 +21,7 @@ import traceback
 import time
 import os
 import subprocess
+import ndnMessage_Helper
 
 from pyndn import Name
 from pyndn import Data
@@ -46,7 +47,7 @@ class Consumer(object):
 
             self.face.setCommandSigningInfo(self.keyChain, \
                                             self.keyChain.getDefaultCertificateName())
-            self.face.registerPrefix(self.configPrefix, self.onInterest, self.onRegisterFailed)
+            self.face.registerPrefix(self.configPrefix, self.onInterest_Publish, self.onRegisterFailed)
             print "Registering listening prefix : " + self.configPrefix.toUri()
 
             while not self.isDone:
@@ -58,15 +59,8 @@ class Consumer(object):
             print "ERROR: %s" % e
 
 
-    def onInterest(self, prefix, interest, face, interestFilterId, filter):
+    def onInterest_Publish(self, prefix, interest, face, interestFilterId, filter):
 
-        interestName = interest.getName()
-        #data = Data(interestName)
-        #data.setContent("Test Pull based model")
-        #hourMilliseconds = 600 * 1000
-        #data.getMetaInfo().setFreshnessPeriod(hourMilliseconds)
-        #self.keyChain.sign(data, self.keyChain.getDefaultCertificateName())
-        #face.send(data.wireEncode().toBuffer())
         print "Received Publish Interest message"
         name_prefix = '/umobile/push_PulblishData/pull'
         self._sendNextInterest(Name(name_prefix))
@@ -86,11 +80,17 @@ class Consumer(object):
         print "Sent Pull Interest for %s" % uri
 
     def _onData(self, interest, data):
-        payload = data.getContent()
-        dataName = data.getName()
-        print "Received data name: ", dataName.toUri()
-        print "Received data: ", payload.toRawStr()
-        self.isDone = True
+
+        script_path = os.path.abspath(__file__)  # i.e. /path/to/dir/foobar.py
+        script_dir = os.path.split(script_path)[0]  # i.e. /path/to/dir/
+        fileName = 'testfile_received.docx'
+        last_segment, interestName = ndnMessage_Helper.extractData_message(script_dir, fileName, data)
+        if last_segment == True:
+
+            print 'Received all chunks of filename"%s' % fileName
+        else:
+            print 'This is not the last chunk, send subsequent Interest'
+            self._sendNextInterest(interestName)
 
 
     def _onTimeout(self, interest):
