@@ -42,7 +42,7 @@ class Consumer(object):
         self.isDone = False
         self.keyChain = KeyChain()
         self.face = Face("127.0.0.1")
-        self.namePrefix = '/umobile/push_polling/'
+        self.namePrefix = '/umobile/polling/push'
         self.polling_interval = 5
         self.nextSegment = 0
 
@@ -88,7 +88,7 @@ class Consumer(object):
         if name.toUri() not in self.outstanding:
             self.outstanding[name.toUri()] = 1
 
-        self.face.expressInterest(interest, self._onData, self._onTimeout)
+        self.face.expressInterest(interest, self._onData, None)
         print "Sent Interest for %s" % uri
 
     def _onData(self, interest, data):

@@ -38,7 +38,7 @@ class Producer(object):
         self.keyChain = KeyChain()
         self.face = Face("127.0.0.1")
         ## Add Data in Interest name
-        self.nameInput = '/umobile/notification/push/Hello'
+        self.nameInput = '/umobile/notification/push/hello'
 
     def run(self):
 

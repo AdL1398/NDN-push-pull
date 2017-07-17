@@ -32,7 +32,7 @@ import threading
 class Producer(object):
     def __init__(self):
 
-        Prefix1 = '/umobile/push_polling/'
+        Prefix1 = '/umobile/polling/push'
         self.configPrefix = Name(Prefix1)
         self.outstanding = dict()
         self.isDone = False
